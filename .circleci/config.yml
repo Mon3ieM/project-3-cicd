@@ -1,0 +1,34 @@
+version: 2.1
+jobs:
+  build-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+        - run:
+            name: cd frontend
+            command: cd frontend
+        - run:
+            name: npm install
+            command: npm install
+        - run:
+            name: npm run build
+            command: npm run build
+        
+  build-backend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+        - run:
+            name: cd backend
+            command: cd backend
+        - run:
+            name: npm install
+            command: npm install
+        - run:
+            name: npm run build
+            command: npm run build
+workflows:
+  defualt:
+    jobs:
+      - build-frontend
+      - build-backend
