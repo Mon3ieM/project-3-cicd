@@ -1,15 +1,18 @@
 version: 2.1
-jobs:
+commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-    docker:
-      - image: amazon/aws-cli
+    parameters:
+      STACK:
+        Description: Stack Name.
+        Type: String  
     steps:
       - run:
           name: Destroy environments
           when: on_fail
           command: |
-            aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7}
+            aws cloudformation delete-stack --stack-name ${STACK}
+jobs:
   build-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -149,7 +152,8 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - destroy-environment
+      - destroy-environment --parameter-overrides STACK="udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment --parameter-overrides STACK="udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
 workflows:
   defualt:
     jobs:
