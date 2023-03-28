@@ -326,7 +326,26 @@ jobs:
               --template-file .circleci/files/cloudfront.yml \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --stack-name InitialStack
-
+  cleanup:
+    docker:
+      - image: mareimorsy/aws-node
+    steps:
+      - checkout
+      - run:
+          name: Remove old stacks and files
+          command: |
+            export STACKS=($(aws cloudformation list-stacks \
+                --query "StackSummaries[*].StackName" \
+                --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
+            echo Stack names: "${STACKS[@]}"
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/old_workflow_id)
+            echo Old Workflow ID: $OldWorkflowID 
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            then
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowID}"
+            fi
 
 workflows:
   defualt:
@@ -343,6 +362,9 @@ workflows:
           requires: [build-backend]
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          filters:
+           branches: 
+            only: [main]
       - configure_infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
@@ -355,3 +377,5 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
+      - cleanup:
+          requires: [cloudfront-update]
