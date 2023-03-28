@@ -22,6 +22,26 @@ commands:
   #           event: pass
   #           channel: $SLACK_DEFAULT_CHANNEL
   #           template: success_tagged_deployment_1
+  revert-migrations:
+    description: Revert the last migration
+    parameters:
+      Workflow_ID:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+            SUCCESS=$(curl --insecure  https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/migration_<< parameters.Workflow_ID >>)
+            echo "$SUCCESS"
+            # Logic for reverting the database state
+            if (( $SUCCESS == 1 ));
+            then
+              cd ~/project/backend
+              npm install
+              npm run migration:revert
+            fi
 jobs:
   build-frontend:
     docker:
@@ -197,6 +217,13 @@ jobs:
             npm install
             npm run premigrations
             npm run migrations
+      - run:
+          name: Send migration status to kvdb.io OR memstash.io
+          command: |   
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+              curl https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+              fi
    
   deploy-frontend:
     docker:
@@ -273,12 +300,12 @@ jobs:
             echo ${URL} 
             if curl -s ${URL} | grep "Welcome"
             then
-              exit 0
+              exit 1
             else
               exit 1
             fi
-      # - notify_on_failure
       - destroy-environment
+      - revert-migrations
 
 workflows:
   defualt:
