@@ -8,6 +8,7 @@ commands:
           when: on_fail
           command: |
             aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
   # notify_on_failure:
   #     steps:
@@ -223,6 +224,8 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints: ["1a:34:ad:10:81:64:fd:40:4e:41:5b:b4:df:ec:60:2e"]
+      - attach_workspace:
+          at: ~/
       - run:
           name: Deploy backend
           command: |
@@ -266,7 +269,7 @@ jobs:
               exit 1
             fi
       # - notify_on_failure
-      - destroy_environment
+      - destroy-environment
 
 workflows:
   defualt:
