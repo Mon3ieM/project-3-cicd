@@ -222,7 +222,7 @@ jobs:
           command: |   
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-              curl https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+              curl --insecure  https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
               fi
    
   deploy-frontend:
@@ -306,6 +306,27 @@ jobs:
             fi
       - destroy-environment
       - revert-migrations
+  cloudfront-update:
+    docker:
+      - image: mareimorsy/aws-node
+    steps:
+      - checkout
+      - run:
+          name: Save Old Workflow ID to kvdb.io
+          command: |
+            export OLD_WORKFLOW_ID=$(aws cloudformation \
+                      list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+                      --no-paginate --output text)
+            echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
+            curl -k https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/old_workflow_id -d "${OLD_WORKFLOW_ID}"
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+              --stack-name InitialStack
+
 
 workflows:
   defualt:
