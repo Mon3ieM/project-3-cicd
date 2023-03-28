@@ -9,6 +9,18 @@ commands:
           command: |
             aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
             aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+  # notify_on_failure:
+  #     steps:
+  #       - slack/notify:
+  #           event: fail
+  #           channel: $SLACK_DEFAULT_CHANNEL
+  #           template: basic_fail_1
+  # notify_on_success:
+  #     steps:
+  #       - slack/notify:
+  #           event: pass
+  #           channel: $SLACK_DEFAULT_CHANNEL
+  #           template: success_tagged_deployment_1
 jobs:
   build-frontend:
     docker:
@@ -184,16 +196,7 @@ jobs:
             npm install
             npm run premigrations
             npm run migrations
-
-      # - run:
-      #     name: Send migration results to memstash
-      #     command: |
-      #       # Your code here
-      #       exit 1
-     # Here's where you will add some code to rollback on failure      
-
-
-     # Here's where you will add some code to rollback on failure      
+   
   deploy-frontend:
     docker:
       - image: mareimorsy/aws-node
@@ -242,6 +245,28 @@ jobs:
             ls ../.circleci/ansible/roles/deploy/
             cd ../.circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
+  smoke-test:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      # - checkout
+      - run:
+          name: Backend smoke test.
+          command: |
+            export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            
+            # URL="http://$BACKEND_PUBLIC_IP:3030/api/status"
+            URL="http://g00gle.com"
+            if curl -s --head ${URL}
+            then
+              echo "It worked!"
+              exit 0
+            else
+              echo "Rolling Back"
+              exit 1
+            fi
+      # - notify_on_failure
+      - destroy_environment
 
 workflows:
   defualt:
@@ -266,3 +291,5 @@ workflows:
           requires: [deploy-infrastructure]
       - deploy-backend:
           requires: [run-migrations]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
