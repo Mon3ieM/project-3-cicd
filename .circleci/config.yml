@@ -281,6 +281,13 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Save Old Workflow ID to kvdb.io
+          command: |
+            export OLD_WORKFLOW_ID=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
+            echo "Old Wokflow ID: $(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)"
+            echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
+            curl -k https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/old_workflow_id -d "${OLD_WORKFLOW_ID}"
+      - run:
           name: Backend smoke test.
           command: |
             export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
@@ -311,14 +318,6 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - run:
-          name: Save Old Workflow ID to kvdb.io
-          command: |
-            export OLD_WORKFLOW_ID=$(aws cloudformation \
-                      list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-                      --no-paginate --output text)
-            echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
-            curl -k https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/old_workflow_id -d "${OLD_WORKFLOW_ID}"
       - run:
           name: Update cloudfront distribution
           command: |
