@@ -308,7 +308,7 @@ jobs:
       - revert-migrations
   cloudfront-update:
     docker:
-      - image: mareimorsy/aws-node
+      - image: amazon/aws-cli
     steps:
       - checkout
       - run:
@@ -328,7 +328,7 @@ jobs:
               --stack-name InitialStack
   cleanup:
     docker:
-      - image: mareimorsy/aws-node
+      - image: amazon/aws-cli
     steps:
       - checkout
       - run:
