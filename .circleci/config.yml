@@ -251,8 +251,8 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints: ["1a:34:ad:10:81:64:fd:40:4e:41:5b:b4:df:ec:60:2e"]
-      - attach_workspace:
-          at: ~/
+      # - attach_workspace:
+      #     at: ~/
       - run:
           name: Deploy backend
           command: |
@@ -343,11 +343,7 @@ jobs:
             echo Stack names: "${STACKS[@]}"
             export OldWorkflowID=$(curl --insecure https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/old_workflow_id)
             echo Old Workflow ID: $OldWorkflowID 
-            if [[ -z "${OldWorkflowID}" ]]
-            then
-              echo "Nothing to clean!"
-              exit 0;
-            else if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            if [[ ! -z "${OldWorkflowID}" && "${STACKS[@]}" =~ "${OldWorkflowID}"]]
             then
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name "backend-${OldWorkflowID}"
