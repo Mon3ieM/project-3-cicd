@@ -256,9 +256,12 @@ jobs:
       - run:
           name: Deploy backend
           command: |
+            echo ".circleci/ansible/inventory.txt >>>> before"
+            cat .circleci/ansible/inventory.txt
             export TYPEORM_HOST=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
             echo $TYPEORM_HOST >> .circleci/ansible/inventory.txt
-
+            echo ".circleci/ansible/inventory.txt >>>> After"
+            cat .circleci/ansible/inventory.txt
             cd backend
             npm i
             npm run build
@@ -280,13 +283,6 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - run:
-          name: Save Old Workflow ID to kvdb.io
-          command: |
-            export OLD_WORKFLOW_ID=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
-            echo "Old Wokflow ID: $(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)"
-            echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
-            curl -k https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/old_workflow_id -d "${OLD_WORKFLOW_ID}"
       - run:
           name: Backend smoke test.
           command: |
@@ -319,6 +315,14 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Save Old Workflow ID to kvdb.io
+          command: |
+            export OLD_WORKFLOW_ID=$(aws cloudformation \
+                      list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+                      --no-paginate --output text)
+            echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
+            curl -k https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/old_workflow_id -d "${OLD_WORKFLOW_ID}"
+      - run:
           name: Update cloudfront distribution
           command: |
             aws cloudformation deploy \
@@ -339,7 +343,11 @@ jobs:
             echo Stack names: "${STACKS[@]}"
             export OldWorkflowID=$(curl --insecure https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/old_workflow_id)
             echo Old Workflow ID: $OldWorkflowID 
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            if [[ -z "${OldWorkflowID}" ]]
+            then
+              echo "Nothing to clean!"
+              exit 0;
+            else if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name "backend-${OldWorkflowID}"
@@ -378,3 +386,4 @@ workflows:
           requires: [smoke-test]
       - cleanup:
           requires: [cloudfront-update]
+
