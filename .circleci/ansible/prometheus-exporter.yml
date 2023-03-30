@@ -20,29 +20,35 @@
       become: true
       apt:
         name: python3
-        state: 2.7.13
+        state: latest
   tasks:
-    - name: "install node exporter."
+    - name: "Download node exproter"
+      become: true
+      shell:
+        cmd: "wget https://github.com/prometheus/node_exporter/releases/download/v0.17.0/node_exporter-0.17.0.linux-amd64.tar.gz; mv node_exporter-0.17.0.linux-amd64.tar.gz /tmp"
+        chdir: .
+
+    - name: "unarchive node exporter."
       become: true
       unarchive:
-        src: "https://github.com/prometheus/node_exporter/releases/download/v0.17.0/node_exporter-0.17.0.linux-amd64.tar.gz"
-        dest: "/tmp"
+        src: /tmp/node_exporter-0.17.0.linux-amd64.tar.gz
+        dest: /tmp
         remote_src: yes
         mode: 'u+x,g+x,o+x'
 
     - name: "move binary to /usr/local/bin."
       become: true
       copy:
-        src: "/tmp/node_exporter-0.17.0.linux-amd64/node_exporter"
-        dest: "/usr/local/bin/node_exporter"
+        src: /tmp/node_exporter-0.17.0.linux-amd64/node_exporter
+        dest: /usr/local/bin/node_exporter
         remote_src: yes
         mode: '0777'
         
     - name: "add node exporter configuration."
       become: true
       copy:
-        src: "node_exporter.service"
-        dest: "/etc/systemd/system/"
+        src: node_exporter.service
+        dest: /etc/systemd/system/
 
     - name: "enable node_exporter service"
       become: true
