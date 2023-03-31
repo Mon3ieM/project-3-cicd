@@ -10,18 +10,6 @@ commands:
             aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
             aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-  # notify_on_failure:
-  #     steps:
-  #       - slack/notify:
-  #           event: fail
-  #           channel: $SLACK_DEFAULT_CHANNEL
-  #           template: basic_fail_1
-  # notify_on_success:
-  #     steps:
-  #       - slack/notify:
-  #           event: pass
-  #           channel: $SLACK_DEFAULT_CHANNEL
-  #           template: success_tagged_deployment_1
   revert-migrations:
     description: Revert the last migration
     parameters:
@@ -383,7 +371,6 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
-
-      # - cleanup:
-      #     requires: [cloudfront-update]
+      - cleanup:
+          requires: [cloudfront-update]
 
