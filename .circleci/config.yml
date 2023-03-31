@@ -35,6 +35,8 @@ commands:
             # Logic for reverting the database state
             if (( $SUCCESS == 1 ));
             then
+              export TYPEORM_HOST=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text)
+              echo "$TYPEORM_HOST"
               cd ~/project/backend
               npm install
               npm run migrations:revert
@@ -299,7 +301,7 @@ jobs:
               exit 1
             fi
       - revert-migrations
-      - destroy-environment
+      # - destroy-environment
   cloudfront-update:
     docker:
       - image: amazon/aws-cli
