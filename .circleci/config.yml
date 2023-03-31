@@ -1,5 +1,14 @@
 version: 2.1
 commands:
+  destroy-environment-without-s3:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    steps:
+      - run:
+          name: Destroy All environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     steps:
@@ -167,7 +176,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - destroy-environment
+      - destroy-environment-without-s3
 
   configure_infrastructure: 
     docker:
@@ -186,7 +195,7 @@ jobs:
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
             ansible-playbook -i inventory.txt prometheus-exporter.yml -vv
-      - destroy-environment
+      - destroy-environment-without-s3
   run-migrations:
     docker: 
       - image: mareimorsy/aws-node
