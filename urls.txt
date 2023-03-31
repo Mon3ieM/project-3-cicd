@@ -2,7 +2,7 @@
     https://github.com/Mon3ieM/project-3-cicd
 
 2. Public URL for your S3 Bucket (aka, your green candidate front-end) [URL02]
-    http://udapeople-17198f5.s3-website-us-east-1.amazonaws.com/#/employees
+    http://udapeople-b0d5681.s3-website-us-east-1.amazonaws.com/#/employees
 
 3. deployed and functioning front-end application in CloudFront. [URL03_SCREENSHOT]
-    http://d3pio5z5zr4v1s.cloudfront.net/#/employees
+    http://dcld9j1jt3fkm.cloudfront.net/#/employees

@@ -364,23 +364,23 @@ workflows:
       - scan-backend:
           requires: [build-backend]
       #  To avoid re-deploying and overriding the urls in the text    
-      - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-          filters:
-           branches: 
-            only: [main]
-      - configure_infrastructure:
-          requires: [deploy-infrastructure]
-      - run-migrations:
-          requires: [configure_infrastructure]
-      - deploy-frontend:
-          requires: [deploy-infrastructure]
-      - deploy-backend:
-          requires: [run-migrations]
-      - smoke-test:
-          requires: [deploy-backend, deploy-frontend]
-      - cloudfront-update:
-          requires: [smoke-test]
+      # - deploy-infrastructure:
+      #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+      #     filters:
+      #      branches: 
+      #       only: [main]
+      # - configure_infrastructure:
+      #     requires: [deploy-infrastructure]
+      # - run-migrations:
+      #     requires: [configure_infrastructure]
+      # - deploy-frontend:
+      #     requires: [deploy-infrastructure]
+      # - deploy-backend:
+      #     requires: [run-migrations]
+      # - smoke-test:
+      #     requires: [deploy-backend, deploy-frontend]
+      # - cloudfront-update:
+      #     requires: [smoke-test]
       # - cleanup:
       #     requires: [cloudfront-update]
 
