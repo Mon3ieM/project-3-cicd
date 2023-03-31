@@ -20,7 +20,7 @@ commands:
             aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
   revert-migrations-and-delete-environment:
-    description: Revert the last migration
+    description: Revert the last migration and delete environment
     parameters:
       Workflow_ID:
         type: string
