@@ -19,7 +19,7 @@ commands:
             aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
             aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
-  revert-migrations:
+  revert-migrations-and-delete-environment:
     description: Revert the last migration
     parameters:
       Workflow_ID:
@@ -40,6 +40,9 @@ commands:
               cd ~/project/backend
               npm install
               npm run migrations:revert
+              aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+              aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+              aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
             fi
 jobs:
   build-frontend:
@@ -300,8 +303,7 @@ jobs:
             else
               exit 1
             fi
-      - revert-migrations
-      # - destroy-environment
+      - revert-migrations-and-delete-environment
   cloudfront-update:
     docker:
       - image: amazon/aws-cli
