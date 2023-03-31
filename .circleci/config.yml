@@ -161,10 +161,7 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            aws ec2 describe-instances           \
-             --query 'Reservations[*].Instances[*].PublicIpAddress'    \
-                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-                      --output text >> .circleci/ansible/inventory.txt
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text >> .circleci/ansible/inventory.txt
 
       - persist_to_workspace:
           root: ~/
@@ -199,7 +196,7 @@ jobs:
       - run:
           name: Run migrations
           command: |
-            export TYPEORM_HOST=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            export TYPEORM_HOST=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text)
             cd backend
             npm install
             npm run premigrations
@@ -211,7 +208,7 @@ jobs:
             then
               curl --insecure  https://kvdb.io/BEeujHHC8FeKuvy8tHX9Aq/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
               fi
-   
+      - destroy-environment
   deploy-frontend:
     docker:
       - image: mareimorsy/aws-node
@@ -222,7 +219,7 @@ jobs:
       - run:
           name: Deploy Frontend
           command: |
-            export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text)
              echo "API_URL=http://$BACKEND_PUBLIC_IP:3030" 
             # Build the frontend
             cd frontend
@@ -231,6 +228,7 @@ jobs:
             npm run build:prod
             # aws s3 sync dist s3://udapeople-project
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - destroy-environment
   deploy-backend:
     docker:
       - image: mareimorsy/aws-node
@@ -243,11 +241,7 @@ jobs:
       - run:
           name: Deploy backend
           command: |
-            echo ".circleci/ansible/inventory.txt >>>> before"
-            cat .circleci/ansible/inventory.txt
-            export TYPEORM_HOST=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
-            echo ".circleci/ansible/inventory.txt >>>> After"
-            cat .circleci/ansible/inventory.txt
+            export TYPEORM_HOST=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text)
             cd backend
             npm i
             npm run build
@@ -264,6 +258,7 @@ jobs:
             ls ../.circleci/ansible/roles/deploy/
             cd ../.circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
+      - destroy-environment
   smoke-test:
     docker:
       - image: amazon/aws-cli
@@ -272,7 +267,8 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                      --output text)
             export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
             echo "${API_URL}"
             if curl "${API_URL}/api/status" | grep "ok"
